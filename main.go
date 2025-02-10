@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -72,25 +74,35 @@ func main() {
 			// Создаём клавиатуру
 			keyboard := tgbotapi.NewReplyKeyboard(buttons...)
 			keyboard.OneTimeKeyboard = true // Клавиатура исчезнет после нажатия
+			m := ""
 
-			clients, err := getEngClients(db)
+			users, err := getUsers(db)
 			if err != nil {
 				log.Fatal(err)
 			}
-			m := ""
 			place := 0
-			for _, client := range clients {
+			topFive := false
+			for _, usr := range users {
 				place++
-				if place <= 3 {
-					m += "Пользователь с именем " + client.Name()
+				if place <= 5 {
+					if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.getID() {
+						m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.getName(), usr.getTotalRate())
+						topFive = true
+					} else {
+						m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.getName(), usr.getTotalRate())
+					}
+				} else if topFive {
+					break
+				} else if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.getID() {
+					m += "--------------------------------\n"
+					m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.getName(), usr.getTotalRate())
+					topFive = true
 				}
 			}
-			m += update.Message.Chat.UserName
-			client, err := getEngClientByID(db, int(update.Message.Chat.ID))
-			m += client.Name()
-			// Отправляем сообщение с клавиатурой
+
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, m)
 			msg.ReplyMarkup = keyboard
+			msg.ParseMode = "HTML"
 			bot.Send(msg)
 		}
 	}

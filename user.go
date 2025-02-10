@@ -1,0 +1,153 @@
+package main
+
+import (
+	"database/sql"
+)
+
+type User struct {
+	id         string
+	name       string
+	cycleTrue  int
+	cycleCount int
+	totalTrue  int64
+	totalCount int64
+	question   sql.NullString
+	answer     sql.NullString
+	sets       int
+	level      int
+	totalRate  float64
+}
+
+// Геттеры
+func (e *User) getID() string {
+	return e.id
+}
+
+func (e *User) getName() string {
+	return e.name
+}
+
+func (e *User) getCycleTrue() int {
+	return e.cycleTrue
+}
+
+func (e *User) getCycleCount() int {
+	return e.cycleCount
+}
+
+func (e *User) getTotalTrue() int64 {
+	return e.totalTrue
+}
+
+func (e *User) getTotalRate() float64 {
+	return e.totalRate
+}
+
+func (e *User) getTotalCount() int64 {
+	return e.totalCount
+}
+
+func (e *User) getQuestion() sql.NullString {
+	return e.question
+}
+
+func (e *User) getAnswer() sql.NullString {
+	return e.answer
+}
+
+func (e *User) getSets() int {
+	return e.sets
+}
+
+func (e *User) getLevel() int {
+	return e.level
+}
+
+// Сеттеры
+func (e *User) SetID(id string) {
+	e.id = id
+}
+
+func (e *User) SetName(name string) {
+	e.name = name
+}
+
+func (e *User) SetCycleTrue(cycleTrue int) {
+	e.cycleTrue = cycleTrue
+}
+
+func (e *User) SetCycleCount(cycleCount int) {
+	e.cycleCount = cycleCount
+}
+
+func (e *User) SetTotalTrue(totalTrue int64) {
+	e.totalTrue = totalTrue
+}
+
+func (e *User) SetTotalCount(totalCount int64) {
+	e.totalCount = totalCount
+}
+
+func (e *User) SetTotalRate(totalRate float64) {
+	e.totalRate = totalRate
+}
+
+func (e *User) SetQuestion(question sql.NullString) {
+	e.question = question
+}
+
+func (e *User) SetAnswer(answer sql.NullString) {
+	e.answer = answer
+}
+
+func (e *User) SetSets(sets int) {
+	e.sets = sets
+}
+
+func (e *User) SetLevel(level int) {
+	e.level = level
+}
+
+// Функция для получения списка клиентов
+func getUsers(db *DB) ([]User, error) {
+	query := `SELECT id, name, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level,
+	                 CASE WHEN total_true = 0 THEN 0 ELSE 100 * (total_true / total_count) END AS total_rate
+	          FROM users
+	          ORDER BY total_rate DESC`
+	rows, err := db.Connection.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.id, &user.name, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func getUserByID(db *DB, id int) (*User, error) {
+	query := `SELECT id, name, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level, 
+	                 CASE WHEN total_true = 0 THEN 0 ELSE total_count / total_true END AS ratio
+	          FROM users
+	          WHERE id = ?`
+	row := db.Connection.QueryRow(query, id)
+
+	var user User
+	if err := row.Scan(&user.id, &user.name, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
