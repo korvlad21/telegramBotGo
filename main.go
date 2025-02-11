@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 
@@ -48,34 +49,19 @@ func main() {
 			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 			log.Printf("%s", update.Message.Text)
 			// Создаём кнопки
-			buttons := [][]tgbotapi.KeyboardButton{
-				{
-					tgbotapi.NewKeyboardButton("Кнопка 1"),
-					tgbotapi.NewKeyboardButton("Кнопка 2"),
-					tgbotapi.NewKeyboardButton("Кнопка 3"),
-				},
-				{
-					tgbotapi.NewKeyboardButton("Кнопка 4"),
-					tgbotapi.NewKeyboardButton("Кнопка 5"),
-					tgbotapi.NewKeyboardButton("Кнопка 6"),
-				},
-				{
-					tgbotapi.NewKeyboardButton("Кнопка 7"),
-					tgbotapi.NewKeyboardButton("Кнопка 8"),
-					tgbotapi.NewKeyboardButton("Кнопка 9"),
-				},
-				{
-					tgbotapi.NewKeyboardButton("Кнопка 10"),
-					tgbotapi.NewKeyboardButton("Кнопка 11"),
-					tgbotapi.NewKeyboardButton("Кнопка 12"),
-				},
-			}
-
-			// Создаём клавиатуру
-			keyboard := tgbotapi.NewReplyKeyboard(buttons...)
-			keyboard.OneTimeKeyboard = true // Клавиатура исчезнет после нажатия
+			// Клавиатура исчезнет после нажатия
 			m := ""
-
+			user, err := getUserByID(db, update.Message.Chat.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			m += "Ответ:" + user.getAnswer() + "\n"
+			if update.Message.Text == user.getAnswer() {
+				m += "Правильно!✅"
+			} else {
+				m += "Неправильно!!!!!⛔️"
+			}
+			m += "\n\n"
 			users, err := getUsers(db)
 			if err != nil {
 				log.Fatal(err)
@@ -99,11 +85,46 @@ func main() {
 					topFive = true
 				}
 			}
+			engWords, err := GetAllEngWord(db, 12)
+			if err != nil {
+				log.Fatal(err)
+			}
+			questionType := "eng"
+			if rand.Intn(2) == 1 {
+				questionType = "rus"
+			}
 
+			buttons := createTelegramButtons(engWords, questionType)
+
+			// Создаём клавиатуру
+			keyboard := tgbotapi.NewReplyKeyboard(buttons...)
+			keyboard.OneTimeKeyboard = true
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, m)
 			msg.ReplyMarkup = keyboard
 			msg.ParseMode = "HTML"
 			bot.Send(msg)
 		}
 	}
+}
+
+func createTelegramButtons(engWords []EngWord, questionType string) [][]tgbotapi.KeyboardButton {
+	var buttons [][]tgbotapi.KeyboardButton
+
+	// Количество кнопок в строке
+	buttonsPerRow := 3
+
+	// Создаем кнопки
+	for i := 0; i < len(engWords); i += buttonsPerRow {
+		var row []tgbotapi.KeyboardButton
+		for j := 0; j < buttonsPerRow && i+j < len(engWords); j++ {
+			button := tgbotapi.NewKeyboardButton(engWords[i+j].Eng)
+			if questionType == "rus" {
+				button = tgbotapi.NewKeyboardButton(engWords[i+j].Rus)
+			}
+			row = append(row, button)
+		}
+		buttons = append(buttons, row)
+	}
+
+	return buttons
 }

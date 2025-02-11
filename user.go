@@ -1,9 +1,5 @@
 package main
 
-import (
-	"database/sql"
-)
-
 type User struct {
 	id         string
 	name       string
@@ -11,8 +7,8 @@ type User struct {
 	cycleCount int
 	totalTrue  int64
 	totalCount int64
-	question   sql.NullString
-	answer     sql.NullString
+	question   string
+	answer     string
 	sets       int
 	level      int
 	totalRate  float64
@@ -47,11 +43,11 @@ func (e *User) getTotalCount() int64 {
 	return e.totalCount
 }
 
-func (e *User) getQuestion() sql.NullString {
+func (e *User) getQuestion() string {
 	return e.question
 }
 
-func (e *User) getAnswer() sql.NullString {
+func (e *User) getAnswer() string {
 	return e.answer
 }
 
@@ -92,11 +88,11 @@ func (e *User) SetTotalRate(totalRate float64) {
 	e.totalRate = totalRate
 }
 
-func (e *User) SetQuestion(question sql.NullString) {
+func (e *User) SetQuestion(question string) {
 	e.question = question
 }
 
-func (e *User) SetAnswer(answer sql.NullString) {
+func (e *User) SetAnswer(answer string) {
 	e.answer = answer
 }
 
@@ -137,7 +133,7 @@ func getUsers(db *DB) ([]User, error) {
 	return users, nil
 }
 
-func getUserByID(db *DB, id int) (*User, error) {
+func getUserByID(db *DB, id int64) (*User, error) {
 	query := `SELECT id, name, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level, 
 	                 CASE WHEN total_true = 0 THEN 0 ELSE total_count / total_true END AS ratio
 	          FROM users
