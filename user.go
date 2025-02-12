@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 type User struct {
 	id         string
 	name       string
@@ -146,4 +148,15 @@ func getUserByID(db *DB, id int64) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func (e *User) Update(db *DB) error {
+	query := `UPDATE users SET name = ?, cycle_true = ?, cycle_count = ?, total_true = ?, total_count = ?, 
+				question = ?, answer = ?, sets = ?, level = ? WHERE id = ?`
+	_, err := db.Connection.Exec(query, e.name, e.cycleTrue, e.cycleCount, e.totalTrue, e.totalCount,
+		e.question, e.answer, e.sets, e.level, e.id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return err
 }

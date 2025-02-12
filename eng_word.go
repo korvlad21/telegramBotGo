@@ -61,7 +61,7 @@ func (e *EngWord) SetLos(los string) {
 
 func GetAllEngWord(db *DB, limit int) ([]EngWord, error) {
 	// Добавляем LIMIT в запрос
-	query := `SELECT id, eng, tran, rus, win, los FROM eng_word ORDER BY RAND() LIMIT ?`
+	query := `SELECT id, eng, tran, rus, win, los FROM eng_word ORDER BY RAND() * ((los + 1) / (win + 1)) DESC LIMIT ?`
 	rows, err := db.Connection.Query(query, limit)
 	if err != nil {
 		return nil, err
@@ -83,4 +83,10 @@ func GetAllEngWord(db *DB, limit int) ([]EngWord, error) {
 	}
 
 	return engWords, nil
+}
+
+func (e *EngWord) Update(db *DB) error {
+	query := `UPDATE eng_word SET eng = ?, tran = ?, rus = ?, win = ?, los = ? WHERE id = ?`
+	_, err := db.Connection.Exec(query, e.Eng, e.Tran, e.Rus, e.Win, e.Los, e.ID)
+	return err
 }

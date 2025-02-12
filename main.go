@@ -89,12 +89,22 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			questionType := "eng"
+			answerWord := getAnswerWord(engWords)
+			buttonType := "eng"
+			answer := answerWord.Eng
+			question := answerWord.Rus
 			if rand.Intn(2) == 1 {
-				questionType = "rus"
+				buttonType = "rus"
+				answer = answerWord.Rus
+				question = answerWord.Eng
 			}
+			user.SetAnswer(answer)
+			user.SetQuestion(question)
+			m += "Вопрос:" + question
 
-			buttons := createTelegramButtons(engWords, questionType)
+			user.Update(db)
+
+			buttons := createTelegramButtons(engWords, buttonType)
 
 			// Создаём клавиатуру
 			keyboard := tgbotapi.NewReplyKeyboard(buttons...)
@@ -107,7 +117,7 @@ func main() {
 	}
 }
 
-func createTelegramButtons(engWords []EngWord, questionType string) [][]tgbotapi.KeyboardButton {
+func createTelegramButtons(engWords []EngWord, buttonType string) [][]tgbotapi.KeyboardButton {
 	var buttons [][]tgbotapi.KeyboardButton
 
 	// Количество кнопок в строке
@@ -118,7 +128,7 @@ func createTelegramButtons(engWords []EngWord, questionType string) [][]tgbotapi
 		var row []tgbotapi.KeyboardButton
 		for j := 0; j < buttonsPerRow && i+j < len(engWords); j++ {
 			button := tgbotapi.NewKeyboardButton(engWords[i+j].Eng)
-			if questionType == "rus" {
+			if buttonType == "rus" {
 				button = tgbotapi.NewKeyboardButton(engWords[i+j].Rus)
 			}
 			row = append(row, button)
@@ -127,4 +137,9 @@ func createTelegramButtons(engWords []EngWord, questionType string) [][]tgbotapi
 	}
 
 	return buttons
+}
+
+func getAnswerWord(engWords []EngWord) EngWord {
+	randomIndex := rand.Intn(len(engWords))
+	return engWords[randomIndex]
 }
