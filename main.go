@@ -55,12 +55,23 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			m += "Ответ:" + user.getAnswer() + "\n"
+			rightWord, err := FindEngWord(db, user.getAnswer())
+			if err != nil {
+				log.Fatal(err)
+			}
+			ansTran := ""
+			if rightWord.GetEng() == user.getAnswer() {
+				ansTran = rightWord.GetTran()
+			}
+			m += "Ответ: " + user.getAnswer() + ansTran + "\n"
 			if update.Message.Text == user.getAnswer() {
 				m += "Правильно!✅"
+				rightWord.SetWin(rightWord.GetWin() + 1)
 			} else {
 				m += "Неправильно!!!!!⛔️"
+				rightWord.SetLos(rightWord.GetLos() + 1)
 			}
+			rightWord.Update(db)
 			m += "\n\n"
 			users, err := getUsers(db)
 			if err != nil {
@@ -93,14 +104,16 @@ func main() {
 			buttonType := "eng"
 			answer := answerWord.Eng
 			question := answerWord.Rus
+			tran := ""
 			if rand.Intn(2) == 1 {
 				buttonType = "rus"
 				answer = answerWord.Rus
 				question = answerWord.Eng
+				tran = " " + answerWord.Tran
 			}
 			user.SetAnswer(answer)
 			user.SetQuestion(question)
-			m += "Вопрос:" + question
+			m += "\nВопрос: " + question + tran
 
 			user.Update(db)
 

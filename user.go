@@ -5,14 +5,14 @@ import "log"
 type User struct {
 	id         string
 	name       string
-	cycleTrue  int
-	cycleCount int
-	totalTrue  int64
-	totalCount int64
+	cycleTrue  uint
+	cycleCount uint
+	totalTrue  uint64
+	totalCount uint64
 	question   string
 	answer     string
-	sets       int
-	level      int
+	sets       uint
+	level      uint
 	totalRate  float64
 }
 
@@ -25,15 +25,15 @@ func (e *User) getName() string {
 	return e.name
 }
 
-func (e *User) getCycleTrue() int {
+func (e *User) getCycleTrue() uint {
 	return e.cycleTrue
 }
 
-func (e *User) getCycleCount() int {
+func (e *User) getCycleCount() uint {
 	return e.cycleCount
 }
 
-func (e *User) getTotalTrue() int64 {
+func (e *User) getTotalTrue() uint64 {
 	return e.totalTrue
 }
 
@@ -41,7 +41,7 @@ func (e *User) getTotalRate() float64 {
 	return e.totalRate
 }
 
-func (e *User) getTotalCount() int64 {
+func (e *User) getTotalCount() uint64 {
 	return e.totalCount
 }
 
@@ -53,11 +53,11 @@ func (e *User) getAnswer() string {
 	return e.answer
 }
 
-func (e *User) getSets() int {
+func (e *User) getSets() uint {
 	return e.sets
 }
 
-func (e *User) getLevel() int {
+func (e *User) getLevel() uint {
 	return e.level
 }
 
@@ -70,19 +70,19 @@ func (e *User) SetName(name string) {
 	e.name = name
 }
 
-func (e *User) SetCycleTrue(cycleTrue int) {
+func (e *User) SetCycleTrue(cycleTrue uint) {
 	e.cycleTrue = cycleTrue
 }
 
-func (e *User) SetCycleCount(cycleCount int) {
+func (e *User) SetCycleCount(cycleCount uint) {
 	e.cycleCount = cycleCount
 }
 
-func (e *User) SetTotalTrue(totalTrue int64) {
+func (e *User) SetTotalTrue(totalTrue uint64) {
 	e.totalTrue = totalTrue
 }
 
-func (e *User) SetTotalCount(totalCount int64) {
+func (e *User) SetTotalCount(totalCount uint64) {
 	e.totalCount = totalCount
 }
 
@@ -98,11 +98,11 @@ func (e *User) SetAnswer(answer string) {
 	e.answer = answer
 }
 
-func (e *User) SetSets(sets int) {
+func (e *User) SetSets(sets uint) {
 	e.sets = sets
 }
 
-func (e *User) SetLevel(level int) {
+func (e *User) SetLevel(level uint) {
 	e.level = level
 }
 

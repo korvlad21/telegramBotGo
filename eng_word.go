@@ -1,16 +1,16 @@
 package main
 
 type EngWord struct {
-	ID   int64
+	ID   uint64
 	Eng  string
 	Tran string
 	Rus  string
-	Win  string
-	Los  string
+	Win  uint64
+	Los  uint64
 }
 
 // Геттеры
-func (e *EngWord) GetID() int64 {
+func (e *EngWord) GetID() uint64 {
 	return e.ID
 }
 
@@ -26,16 +26,16 @@ func (e *EngWord) GetRus() string {
 	return e.Rus
 }
 
-func (e *EngWord) GetWin() string {
+func (e *EngWord) GetWin() uint64 {
 	return e.Win
 }
 
-func (e *EngWord) GetLos() string {
+func (e *EngWord) GetLos() uint64 {
 	return e.Los
 }
 
 // Сеттеры
-func (e *EngWord) SetID(id int64) {
+func (e *EngWord) SetID(id uint64) {
 	e.ID = id
 }
 
@@ -51,11 +51,11 @@ func (e *EngWord) SetRus(rus string) {
 	e.Rus = rus
 }
 
-func (e *EngWord) SetWin(win string) {
+func (e *EngWord) SetWin(win uint64) {
 	e.Win = win
 }
 
-func (e *EngWord) SetLos(los string) {
+func (e *EngWord) SetLos(los uint64) {
 	e.Los = los
 }
 
@@ -83,6 +83,18 @@ func GetAllEngWord(db *DB, limit int) ([]EngWord, error) {
 	}
 
 	return engWords, nil
+}
+
+func FindEngWord(db *DB, word string) (*EngWord, error) {
+	query := `SELECT id, eng, tran, rus, win, los FROM eng_word WHERE eng = ? OR rus = ? LIMIT 1`
+	row := db.Connection.QueryRow(query, word, word)
+
+	var engWord EngWord
+	if err := row.Scan(&engWord.ID, &engWord.Eng, &engWord.Tran, &engWord.Rus, &engWord.Win, &engWord.Los); err != nil {
+		return nil, err
+	}
+
+	return &engWord, nil
 }
 
 func (e *EngWord) Update(db *DB) error {
