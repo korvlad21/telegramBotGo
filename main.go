@@ -16,10 +16,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Ошибка загрузки файла .env")
 	}
-	// Инициализируем базу данных
 	db := NewDB()
-	defer db.Close() // Закрываем соединение после завершения работы
-	// Получаем токен из переменных окружения (рекомендуется для безопасности)
+	defer db.Close()
+
+	redisClient := NewRedis()
+
+	defer redisClient.Close() // Закроем соединение при завершении
 
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if botToken == "" {
@@ -73,6 +75,13 @@ func main() {
 				user.SetTotalTrue(user.GetTotalTrue() + 1)
 			} else {
 				m += "Неправильно!!!!!⛔️"
+				key := fmt.Sprintf("%s", user.GetID())
+				newEntry := fmt.Sprintf("%s - %s", rightWord.GetEng(), rightWord.GetRus())
+
+				// Добавляем новый элемент в список
+				if err := redisClient.ListPush(key, newEntry); err != nil {
+					log.Printf("Ошибка добавления данных в Redis: %v", err)
+				}
 				rightWord.SetLos(rightWord.GetLos() + 1)
 			}
 			rightWord.Update(db)
