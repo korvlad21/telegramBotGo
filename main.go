@@ -55,46 +55,58 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			rightWord, err := FindEngWord(db, user.getAnswer())
+			rightWord, err := FindEngWord(db, user.GetAnswer())
 			if err != nil {
 				log.Fatal(err)
 			}
 			ansTran := ""
-			if rightWord.GetEng() == user.getAnswer() {
+			if rightWord.GetEng() == user.GetAnswer() {
 				ansTran = rightWord.GetTran()
 			}
-			m += "Ответ: " + user.getAnswer() + ansTran + "\n"
-			if update.Message.Text == user.getAnswer() {
+			m += "Ответ: " + user.GetAnswer() + ansTran + "\n"
+			user.SetCycleCount(user.GetCycleCount() + 1)
+			user.SetTotalCount(user.GetTotalCount() + 1)
+			if update.Message.Text == user.GetAnswer() {
 				m += "Правильно!✅"
 				rightWord.SetWin(rightWord.GetWin() + 1)
+				user.SetCycleTrue(user.GetCycleTrue() + 1)
+				user.SetTotalTrue(user.GetTotalTrue() + 1)
 			} else {
 				m += "Неправильно!!!!!⛔️"
 				rightWord.SetLos(rightWord.GetLos() + 1)
 			}
 			rightWord.Update(db)
-			m += "\n\n"
-			users, err := getUsers(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			place := 0
-			topFive := false
-			for _, usr := range users {
-				place++
-				if place <= 5 {
-					if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.getID() {
-						m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.getName(), usr.getTotalRate())
-						topFive = true
-					} else {
-						m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.getName(), usr.getTotalRate())
-					}
-				} else if topFive {
-					break
-				} else if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.getID() {
-					m += "--------------------------------\n"
-					m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.getName(), usr.getTotalRate())
-					topFive = true
+			m += "\n"
+			m += fmt.Sprintf("Сет(%d): %.2f%%\n", user.GetCycleCount(), float64(user.GetCycleTrue())/float64(user.GetCycleCount())*100)
+			m += fmt.Sprintf("Всего(%d): %.2f%%\n", user.GetTotalCount(), float64(user.GetTotalTrue())/float64(user.GetTotalCount())*100)
+			if 100 == int(user.GetCycleCount()) {
+				m += "\n\n"
+				user.SetCycleCount(0)
+				user.SetCycleTrue(0)
+				users, err := getUsers(db)
+				if err != nil {
+					log.Fatal(err)
 				}
+				place := 0
+				topFive := false
+				for _, usr := range users {
+					place++
+					if place <= 5 {
+						if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.GetID() {
+							m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetName(), usr.GetTotalRate())
+							topFive = true
+						} else {
+							m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.GetName(), usr.GetTotalRate())
+						}
+					} else if topFive {
+						break
+					} else if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.GetID() {
+						m += "--------------------------------\n"
+						m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetName(), usr.GetTotalRate())
+						topFive = true
+					}
+				}
+
 			}
 			engWords, err := GetAllEngWord(db, 12)
 			if err != nil {

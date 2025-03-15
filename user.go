@@ -7,8 +7,8 @@ type User struct {
 	name       string
 	cycleTrue  uint
 	cycleCount uint
-	totalTrue  uint64
-	totalCount uint64
+	totalTrue  uint
+	totalCount uint
 	question   string
 	answer     string
 	sets       uint
@@ -17,47 +17,47 @@ type User struct {
 }
 
 // Геттеры
-func (e *User) getID() string {
+func (e *User) GetID() string {
 	return e.id
 }
 
-func (e *User) getName() string {
+func (e *User) GetName() string {
 	return e.name
 }
 
-func (e *User) getCycleTrue() uint {
+func (e *User) GetCycleTrue() uint {
 	return e.cycleTrue
 }
 
-func (e *User) getCycleCount() uint {
+func (e *User) GetCycleCount() uint {
 	return e.cycleCount
 }
 
-func (e *User) getTotalTrue() uint64 {
+func (e *User) GetTotalTrue() uint {
 	return e.totalTrue
 }
 
-func (e *User) getTotalRate() float64 {
+func (e *User) GetTotalRate() float64 {
 	return e.totalRate
 }
 
-func (e *User) getTotalCount() uint64 {
+func (e *User) GetTotalCount() uint {
 	return e.totalCount
 }
 
-func (e *User) getQuestion() string {
+func (e *User) GetQuestion() string {
 	return e.question
 }
 
-func (e *User) getAnswer() string {
+func (e *User) GetAnswer() string {
 	return e.answer
 }
 
-func (e *User) getSets() uint {
+func (e *User) GetSets() uint {
 	return e.sets
 }
 
-func (e *User) getLevel() uint {
+func (e *User) GetLevel() uint {
 	return e.level
 }
 
@@ -78,11 +78,11 @@ func (e *User) SetCycleCount(cycleCount uint) {
 	e.cycleCount = cycleCount
 }
 
-func (e *User) SetTotalTrue(totalTrue uint64) {
+func (e *User) SetTotalTrue(totalTrue uint) {
 	e.totalTrue = totalTrue
 }
 
-func (e *User) SetTotalCount(totalCount uint64) {
+func (e *User) SetTotalCount(totalCount uint) {
 	e.totalCount = totalCount
 }
 
