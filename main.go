@@ -69,12 +69,12 @@ func main() {
 			user.SetCycleCount(user.GetCycleCount() + 1)
 			user.SetTotalCount(user.GetTotalCount() + 1)
 			if update.Message.Text == user.GetAnswer() {
-				m += "Правильно!✅"
+				m += "<b>Правильно!</b>✅"
 				rightWord.SetWin(rightWord.GetWin() + 1)
 				user.SetCycleTrue(user.GetCycleTrue() + 1)
 				user.SetTotalTrue(user.GetTotalTrue() + 1)
 			} else {
-				m += "Неправильно!!!!!⛔️"
+				m += "<b>Неправильно!!!!!</b>⛔️"
 				key := fmt.Sprintf("%s", user.GetID())
 				newEntry := fmt.Sprintf("%s - %s", rightWord.GetEng(), rightWord.GetRus())
 
@@ -115,7 +115,13 @@ func main() {
 						topFive = true
 					}
 				}
-
+				str, err := redisClient.ListGetAllAsString(fmt.Sprintf("%s", user.GetID()))
+				if err != nil {
+					log.Println("Ошибка при получении данных из Redis:", err)
+				} else {
+					m += "\nСлова, в которых вы допустили ошибку:\n" + str + "\n\n"
+				}
+				redisClient.Delete(fmt.Sprintf("%s", user.GetID()))
 			}
 			engWords, err := GetAllEngWord(db, 12)
 			if err != nil {

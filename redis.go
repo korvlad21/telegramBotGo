@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -64,4 +65,16 @@ func (r *Redis) ListPush(key, value string) error {
 // ListGetAll получает все элементы списка по ключу
 func (r *Redis) ListGetAll(key string) ([]string, error) {
 	return r.Client.LRange(r.ctx, key, 0, -1).Result()
+}
+
+func (r *Redis) ListGetAllAsString(key string) (string, error) {
+	values, err := r.ListGetAll(key)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(values, "\n"), nil
+}
+
+func (r *Redis) Delete(key string) error {
+	return r.Client.Del(r.ctx, key).Err()
 }
