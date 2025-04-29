@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -55,6 +56,9 @@ func main() {
 			m := ""
 			user, err := getUserByID(db, update.Message.Chat.ID)
 			if err != nil {
+				if err == sql.ErrNoRows {
+					log.Fatal("sdfsdf")
+				}
 				log.Fatal(err)
 			}
 			rightWord, err := FindEngWord(db, user.GetAnswer())

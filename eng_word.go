@@ -1,5 +1,7 @@
 package main
 
+import "database/sql"
+
 type EngWord struct {
 	ID   uint64
 	Eng  string
@@ -60,16 +62,26 @@ func (e *EngWord) SetLos(los uint64) {
 }
 
 func GetAllEngWord(db *DB, limit int) ([]EngWord, error) {
-	// Добавляем LIMIT в запрос
-	query := `SELECT id, eng, tran, rus, win, los FROM eng_word ORDER BY RAND() * ((los + 1) / (win + 1)) DESC LIMIT ?`
-	rows, err := db.Connection.Query(query, limit)
+	var (
+		query string
+		rows  *sql.Rows
+		err   error
+	)
+
+	if limit == 0 {
+		query = `SELECT id, eng, tran, rus, win, los FROM eng_word`
+		rows, err = db.Connection.Query(query)
+	} else {
+		query = `SELECT id, eng, tran, rus, win, los FROM eng_word ORDER BY RAND() * ((los + 1) / (win + 1)) DESC LIMIT ?`
+		rows, err = db.Connection.Query(query, limit)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var engWords []EngWord
-
 	for rows.Next() {
 		var engWord EngWord
 		if err := rows.Scan(&engWord.ID, &engWord.Eng, &engWord.Tran, &engWord.Rus, &engWord.Win, &engWord.Los); err != nil {
