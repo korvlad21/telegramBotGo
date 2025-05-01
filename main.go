@@ -63,7 +63,7 @@ func main() {
 			if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
 				log.Fatal(err)
 			}
-			log.Fatal("1")
+
 			rightWord, err := FindEngWord(db, user.GetAnswer())
 			if err != nil {
 				log.Fatal(err)
