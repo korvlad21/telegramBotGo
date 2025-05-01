@@ -19,7 +19,6 @@ func main() {
 	}
 	db := NewDB()
 	defer db.Close()
-
 	redisClient := NewRedis()
 
 	defer redisClient.Close() // Закроем соединение при завершении
@@ -57,10 +56,34 @@ func main() {
 			user, err := getUserByID(db, update.Message.Chat.ID)
 			if err != nil {
 				if err == sql.ErrNoRows {
-					log.Fatal("sdfsdf")
+					continue
 				}
 				log.Fatal(err)
 			}
+			empty, err := IsStatTableEmpty(db, update.Message.Chat.ID)
+			if err != nil {
+				// Если ошибка — таблица, вероятно, не существует => создаём и заполняем
+				log.Printf("Таблица не найдена, создаём заново: %v", err)
+
+				err = CreateStatTable(db, update.Message.Chat.ID)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				err = FillStatTableFromEngWords(db, update.Message.Chat.ID)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Fatal("2")
+			} else if empty {
+				// Таблица есть, но она пустая — просто заполняем
+				err = FillStatTableFromEngWords(db, update.Message.Chat.ID)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Fatal("3")
+			}
+			log.Fatal("4")
 			rightWord, err := FindEngWord(db, user.GetAnswer())
 			if err != nil {
 				log.Fatal(err)

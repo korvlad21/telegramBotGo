@@ -52,23 +52,3 @@ func (db *DB) Close() {
 		log.Printf("Ошибка при закрытии соединения с базой данных: %v", err)
 	}
 }
-
-func (db *DB) GetAllEngClients() (string, error) {
-	var name string
-	query := "SELECT prp, vp, pr, v, name FROM eng_client"
-	err := db.Connection.QueryRow(query).Scan(&name)
-	if err != nil {
-		return "", err
-	}
-	return name, nil
-}
-
-func (db *DB) GetEngClientByID(userID int) (string, error) {
-	var name string
-	query := "SELECT name FROM users WHERE id = ?"
-	err := db.Connection.QueryRow(query, userID).Scan(&name)
-	if err != nil {
-		return "", err
-	}
-	return name, nil
-}
