@@ -132,3 +132,20 @@ func EnsureStatTableReady(db *DB, chatId int64) error {
 	}
 	return nil
 }
+
+func (ws *WordStat) Update(db *DB, chatId int64) error {
+	tableName := fmt.Sprintf("%d_word_stat", chatId)
+
+	query := fmt.Sprintf(`
+		UPDATE %s 
+		SET win = ?, los = ?
+		WHERE id = ?
+	`, tableName)
+
+	_, err := db.Connection.Exec(query, ws.Win, ws.Los, ws.ID)
+	if err != nil {
+		return fmt.Errorf("не удалось обновить статистику слова с id %d: %v", ws.ID, err)
+	}
+
+	return nil
+}
