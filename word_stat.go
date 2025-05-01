@@ -109,3 +109,26 @@ func IsStatTableEmpty(db *DB, chatId int64) (bool, error) {
 
 	return count == 0, nil
 }
+
+func EnsureStatTableReady(db *DB, chatId int64) error {
+	empty, err := IsStatTableEmpty(db, chatId)
+	if err != nil {
+		log.Printf("Таблица не найдена, создаём заново: %v", err)
+
+		err = CreateStatTable(db, chatId)
+		if err != nil {
+			return fmt.Errorf("ошибка создания таблицы: %v", err)
+		}
+
+		err = FillStatTableFromEngWords(db, chatId)
+		if err != nil {
+			return fmt.Errorf("ошибка заполнения таблицы: %v", err)
+		}
+	} else if empty {
+		err = FillStatTableFromEngWords(db, chatId)
+		if err != nil {
+			return fmt.Errorf("ошибка заполнения таблицы: %v", err)
+		}
+	}
+	return nil
+}

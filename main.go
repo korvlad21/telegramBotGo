@@ -60,30 +60,10 @@ func main() {
 				}
 				log.Fatal(err)
 			}
-			empty, err := IsStatTableEmpty(db, update.Message.Chat.ID)
-			if err != nil {
-				// Если ошибка — таблица, вероятно, не существует => создаём и заполняем
-				log.Printf("Таблица не найдена, создаём заново: %v", err)
-
-				err = CreateStatTable(db, update.Message.Chat.ID)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = FillStatTableFromEngWords(db, update.Message.Chat.ID)
-				if err != nil {
-					log.Fatal(err)
-				}
-				log.Fatal("2")
-			} else if empty {
-				// Таблица есть, но она пустая — просто заполняем
-				err = FillStatTableFromEngWords(db, update.Message.Chat.ID)
-				if err != nil {
-					log.Fatal(err)
-				}
-				log.Fatal("3")
+			if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
+				log.Fatal(err)
 			}
-			log.Fatal("4")
+			log.Fatal("1")
 			rightWord, err := FindEngWord(db, user.GetAnswer())
 			if err != nil {
 				log.Fatal(err)
