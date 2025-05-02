@@ -56,16 +56,21 @@ func main() {
 			user, err := getUserByID(db, update.Message.Chat.ID)
 			if err != nil {
 				if err == sql.ErrNoRows {
-					continue
+					if err := CreateUser(db, strconv.FormatInt(update.Message.Chat.ID, 10), update.Message.From.UserName); err != nil {
+						log.Fatal(err)
+					}
+					if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
+						log.Fatal(err)
+					}
+				} else {
+					log.Fatal(err)
 				}
-				log.Fatal(err)
 			}
-			if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
-				log.Fatal(err)
-			}
-
-			rightWord, err := FindEngWord(db, user.GetAnswer())
+			rightWord, rightWordStat, err := FindEngWord(db, update.Message.Chat.ID, user.GetAnswer())
 			if err != nil {
+				if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
+					log.Fatal(err)
+				}
 				log.Fatal(err)
 			}
 			ansTran := ""
@@ -77,7 +82,7 @@ func main() {
 			user.SetTotalCount(user.GetTotalCount() + 1)
 			if update.Message.Text == user.GetAnswer() {
 				m += "<b>Правильно!</b>✅"
-				rightWord.SetWin(rightWord.GetWin() + 1)
+				rightWordStat.SetWin(rightWordStat.GetWin() + 1)
 				user.SetCycleTrue(user.GetCycleTrue() + 1)
 				user.SetTotalTrue(user.GetTotalTrue() + 1)
 			} else {
@@ -89,9 +94,10 @@ func main() {
 				if err := redisClient.ListPush(key, newEntry); err != nil {
 					log.Printf("Ошибка добавления данных в Redis: %v", err)
 				}
-				rightWord.SetLos(rightWord.GetLos() + 1)
+				rightWordStat.SetLos(rightWordStat.GetLos() + 1)
 			}
 			rightWord.Update(db)
+			rightWordStat.Update(db, update.Message.Chat.ID)
 			m += "\n"
 			m += fmt.Sprintf("Сет(%d): %.2f%%\n", user.GetCycleCount(), float64(user.GetCycleTrue())/float64(user.GetCycleCount())*100)
 			m += fmt.Sprintf("Всего(%d): %.2f%%\n", user.GetTotalCount(), float64(user.GetTotalTrue())/float64(user.GetTotalCount())*100)
@@ -109,16 +115,16 @@ func main() {
 					place++
 					if place <= 5 {
 						if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.GetID() {
-							m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetName(), usr.GetTotalRate())
+							m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetUsername(), usr.GetTotalRate())
 							topFive = true
 						} else {
-							m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.GetName(), usr.GetTotalRate())
+							m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.GetUsername(), usr.GetTotalRate())
 						}
 					} else if topFive {
 						break
 					} else if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.GetID() {
 						m += "--------------------------------\n"
-						m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetName(), usr.GetTotalRate())
+						m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetUsername(), usr.GetTotalRate())
 						topFive = true
 					}
 				}
@@ -130,7 +136,7 @@ func main() {
 				}
 				redisClient.Delete(fmt.Sprintf("%s", user.GetID()))
 			}
-			engWords, err := GetAllEngWord(db, 12)
+			engWords, err := GetAllEngWordByStat(db, update.Message.Chat.ID, 12)
 			if err != nil {
 				log.Fatal(err)
 			}

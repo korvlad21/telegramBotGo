@@ -74,7 +74,7 @@ func CreateStatTable(db *DB, chatId int64) error {
 
 func FillStatTableFromEngWords(db *DB, chatId int64) error {
 	// Получаем все английские слова
-	words, err := GetAllEngWord(db, 0)
+	words, err := GetAllEngWord(db)
 	if err != nil {
 		return fmt.Errorf("не удалось получить слова: %v", err)
 	}

@@ -4,7 +4,7 @@ import "log"
 
 type User struct {
 	id         string
-	name       string
+	username   string
 	cycleTrue  uint
 	cycleCount uint
 	totalTrue  uint
@@ -21,8 +21,8 @@ func (e *User) GetID() string {
 	return e.id
 }
 
-func (e *User) GetName() string {
-	return e.name
+func (e *User) GetUsername() string {
+	return e.username
 }
 
 func (e *User) GetCycleTrue() uint {
@@ -66,8 +66,8 @@ func (e *User) SetID(id string) {
 	e.id = id
 }
 
-func (e *User) SetName(name string) {
-	e.name = name
+func (e *User) SetUsername(username string) {
+	e.username = username
 }
 
 func (e *User) SetCycleTrue(cycleTrue uint) {
@@ -108,7 +108,7 @@ func (e *User) SetLevel(level uint) {
 
 // Функция для получения списка клиентов
 func getUsers(db *DB) ([]User, error) {
-	query := `SELECT id, name, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level,
+	query := `SELECT id, username, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level,
 	                 CASE WHEN total_true = 0 THEN 0 ELSE 100 * (total_true / total_count) END AS total_rate
 	          FROM users
 	          ORDER BY total_rate DESC`
@@ -122,7 +122,7 @@ func getUsers(db *DB) ([]User, error) {
 
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.id, &user.name, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
+		if err := rows.Scan(&user.id, &user.username, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
@@ -136,14 +136,14 @@ func getUsers(db *DB) ([]User, error) {
 }
 
 func getUserByID(db *DB, id int64) (*User, error) {
-	query := `SELECT id, name, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level, 
+	query := `SELECT id, username, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level, 
 	                 CASE WHEN total_true = 0 THEN 0 ELSE total_count / total_true END AS ratio
 	          FROM users
 	          WHERE id = ?`
 	row := db.Connection.QueryRow(query, id)
 
 	var user User
-	if err := row.Scan(&user.id, &user.name, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
+	if err := row.Scan(&user.id, &user.username, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.sets, &user.level, &user.totalRate); err != nil {
 		return nil, err
 	}
 
@@ -151,12 +151,22 @@ func getUserByID(db *DB, id int64) (*User, error) {
 }
 
 func (e *User) Update(db *DB) error {
-	query := `UPDATE users SET name = ?, cycle_true = ?, cycle_count = ?, total_true = ?, total_count = ?, 
+	query := `UPDATE users SET username = ?, cycle_true = ?, cycle_count = ?, total_true = ?, total_count = ?, 
 				question = ?, answer = ?, sets = ?, level = ? WHERE id = ?`
-	_, err := db.Connection.Exec(query, e.name, e.cycleTrue, e.cycleCount, e.totalTrue, e.totalCount,
+	_, err := db.Connection.Exec(query, e.username, e.cycleTrue, e.cycleCount, e.totalTrue, e.totalCount,
 		e.question, e.answer, e.sets, e.level, e.id)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return err
+}
+
+func CreateUser(db *DB, chatId string, username string) error {
+	query := `INSERT INTO users (id, username, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level)
+	          VALUES (?, ?, 0, 0, 0, 0, '', '', 0, 1)`
+	_, err := db.Connection.Exec(query, chatId, username)
+	if err != nil {
+		return err
+	}
+	return nil
 }
