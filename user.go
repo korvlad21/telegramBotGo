@@ -161,12 +161,27 @@ func (e *User) Update(db *DB) error {
 	return err
 }
 
-func CreateUser(db *DB, chatId string, username string) error {
+func CreateUser(db *DB, chatId string, username string) (*User, error) {
 	query := `INSERT INTO users (id, username, cycle_true, cycle_count, total_true, total_count, question, answer, sets, level)
 	          VALUES (?, ?, 0, 0, 0, 0, '', '', 0, 1)`
 	_, err := db.Connection.Exec(query, chatId, username)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	user := &User{
+		id:         chatId,
+		username:   username,
+		cycleTrue:  0,
+		cycleCount: 0,
+		totalTrue:  0,
+		totalCount: 0,
+		question:   "",
+		answer:     "",
+		sets:       0,
+		level:      1,
+		totalRate:  0,
+	}
+
+	return user, nil
 }

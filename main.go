@@ -56,12 +56,22 @@ func main() {
 			user, err := getUserByID(db, update.Message.Chat.ID)
 			if err != nil {
 				if err == sql.ErrNoRows {
-					if err := CreateUser(db, strconv.FormatInt(update.Message.Chat.ID, 10), update.Message.From.UserName); err != nil {
+					user, err = CreateUser(db, strconv.FormatInt(update.Message.Chat.ID, 10), update.Message.From.UserName)
+					if err != nil {
 						log.Fatal(err)
 					}
 					if err := EnsureStatTableReady(db, update.Message.Chat.ID); err != nil {
 						log.Fatal(err)
 					}
+					m := "Добро пожаловать, для начала ответьте на вопрос."
+					message, buttons, err := PrepareQuestionAndButtons(user, db, update.Message.Chat.ID, 12)
+					if err != nil {
+						log.Fatal(err)
+					}
+					m += message
+
+					sendMessageWithKeyboard(bot, update.Message.Chat.ID, m, buttons)
+					continue
 				} else {
 					log.Fatal(err)
 				}
@@ -136,36 +146,13 @@ func main() {
 				}
 				redisClient.Delete(fmt.Sprintf("%s", user.GetID()))
 			}
-			engWords, err := GetAllEngWordByStat(db, update.Message.Chat.ID, 12)
+			message, buttons, err := PrepareQuestionAndButtons(user, db, update.Message.Chat.ID, 12)
 			if err != nil {
 				log.Fatal(err)
 			}
-			answerWord := getAnswerWord(engWords)
-			buttonType := "eng"
-			answer := answerWord.Eng
-			question := answerWord.Rus
-			tran := ""
-			if rand.Intn(2) == 1 {
-				buttonType = "rus"
-				answer = answerWord.Rus
-				question = answerWord.Eng
-				tran = " " + answerWord.Tran
-			}
-			user.SetAnswer(answer)
-			user.SetQuestion(question)
-			m += "\nВопрос: " + question + tran
+			m += message
 
-			user.Update(db)
-
-			buttons := createTelegramButtons(engWords, buttonType)
-
-			// Создаём клавиатуру
-			keyboard := tgbotapi.NewReplyKeyboard(buttons...)
-			keyboard.OneTimeKeyboard = true
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, m)
-			msg.ReplyMarkup = keyboard
-			msg.ParseMode = "HTML"
-			bot.Send(msg)
+			sendMessageWithKeyboard(bot, update.Message.Chat.ID, m, buttons)
 		}
 	}
 }
@@ -195,4 +182,48 @@ func createTelegramButtons(engWords []EngWord, buttonType string) [][]tgbotapi.K
 func getAnswerWord(engWords []EngWord) EngWord {
 	randomIndex := rand.Intn(len(engWords))
 	return engWords[randomIndex]
+}
+
+func sendMessageWithKeyboard(bot *tgbotapi.BotAPI, chatID int64, text string, buttons [][]tgbotapi.KeyboardButton) {
+	keyboard := tgbotapi.NewReplyKeyboard(buttons...)
+	keyboard.OneTimeKeyboard = true
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = keyboard
+	msg.ParseMode = "HTML"
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Ошибка при отправке сообщения: %v", err)
+	}
+}
+
+func PrepareQuestionAndButtons(user *User, db *DB, chatID int64, wordCount int) (string, [][]tgbotapi.KeyboardButton, error) {
+	engWords, err := GetAllEngWordByStat(db, chatID, wordCount)
+	if err != nil {
+		return "", nil, err
+	}
+
+	answerWord := getAnswerWord(engWords)
+	buttonType := "eng"
+	answer := answerWord.Eng
+	question := answerWord.Rus
+	tran := ""
+
+	if rand.Intn(2) == 1 {
+		buttonType = "rus"
+		answer = answerWord.Rus
+		question = answerWord.Eng
+		tran = " " + answerWord.Tran
+	}
+
+	user.SetAnswer(answer)
+	user.SetQuestion(question)
+	if err := user.Update(db); err != nil {
+		return "", nil, err
+	}
+
+	message := "\nВопрос: " + question + tran
+	buttons := createTelegramButtons(engWords, buttonType)
+
+	return message, buttons, nil
 }
