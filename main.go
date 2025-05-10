@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -218,12 +219,17 @@ func PrepareQuestionAndButtons(user *User, db *DB, chatID int64, wordCount int) 
 
 	user.SetAnswer(answer)
 	user.SetQuestion(question)
-	if err := user.Update(db); err != nil {
-		return "", nil, err
-	}
 
 	message := "\nВопрос: " + question + tran
 	buttons := createTelegramButtons(engWords, buttonType)
-
+	jsonButtons, err := json.Marshal(buttons)
+	if err != nil {
+		log.Printf("Ошибка сериализации кнопок: %v", err)
+	} else {
+		user.SetButtons(string(jsonButtons))
+	}
+	if err := user.Update(db); err != nil {
+		return "", nil, err
+	}
 	return message, buttons, nil
 }
