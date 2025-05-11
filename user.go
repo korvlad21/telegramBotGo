@@ -126,10 +126,11 @@ func (e *User) SetLevel(level uint) {
 
 // Функция для получения списка клиентов
 func getUsers(db *DB) ([]User, error) {
-	query := `SELECT id, username, cycle_true, cycle_count, total_true, total_count, question, answer, buttons, last_message, sets, level,
-	                 CASE WHEN total_true = 0 THEN 0 ELSE 100 * (total_true / total_count) END AS total_rate
-	          FROM users
-	          ORDER BY total_rate DESC`
+	query := `
+		SELECT id, username, 
+		       CASE WHEN total_count = 0 THEN 0 ELSE 100 * (total_true / total_count) END AS total_rate
+		FROM users
+		ORDER BY total_rate DESC`
 	rows, err := db.Connection.Query(query)
 	if err != nil {
 		return nil, err
@@ -140,14 +141,10 @@ func getUsers(db *DB) ([]User, error) {
 
 	for rows.Next() {
 		var user User
-		if err := rows.Scan(&user.id, &user.username, &user.cycleTrue, &user.cycleCount, &user.totalTrue, &user.totalCount, &user.question, &user.answer, &user.buttons, &user.lastMessage, &user.sets, &user.level, &user.totalRate); err != nil {
+		if err := rows.Scan(&user.id, &user.username, &user.totalRate); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return users, nil
