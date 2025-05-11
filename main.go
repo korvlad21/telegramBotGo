@@ -70,12 +70,22 @@ func main() {
 						log.Fatal(err)
 					}
 					m += message
-
+					if err := saveUserLastMessage(user, db, m); err != nil {
+						log.Printf("Ошибка при сохранении последнего сообщения: %v", err)
+					}
 					sendMessageWithKeyboard(bot, update.Message.Chat.ID, m, buttons)
 					continue
 				} else {
 					log.Fatal(err)
 				}
+			}
+			if "/repeat" == update.Message.Text {
+				buttons, err := parseButtons(user.GetButtons())
+				if err != nil {
+					log.Fatal(err)
+				}
+				sendMessageWithKeyboard(bot, update.Message.Chat.ID, user.GetLastMessage(), buttons)
+				continue
 			}
 			rightWord, rightWordStat, err := FindEngWord(db, update.Message.Chat.ID, user.GetAnswer())
 			if err != nil {
@@ -152,7 +162,9 @@ func main() {
 				log.Fatal(err)
 			}
 			m += message
-
+			if err := saveUserLastMessage(user, db, m); err != nil {
+				log.Printf("Ошибка при сохранении последнего сообщения: %v", err)
+			}
 			sendMessageWithKeyboard(bot, update.Message.Chat.ID, m, buttons)
 		}
 	}
@@ -232,4 +244,35 @@ func PrepareQuestionAndButtons(user *User, db *DB, chatID int64, wordCount int) 
 		return "", nil, err
 	}
 	return message, buttons, nil
+}
+
+func saveUserLastMessage(user *User, db *DB, message string) error {
+	user.SetLastMessage(message)
+
+	if err := user.Update(db); err != nil {
+		log.Printf("Ошибка обновления пользователя: %v", err)
+		return err
+	}
+	return nil
+}
+
+func parseButtons(buttons string) ([][]tgbotapi.KeyboardButton, error) {
+	var rawButtons [][]map[string]string
+	err := json.Unmarshal([]byte(buttons), &rawButtons)
+	if err != nil {
+		return nil, err
+	}
+
+	var keyboard [][]tgbotapi.KeyboardButton
+	for _, row := range rawButtons {
+		var buttonRow []tgbotapi.KeyboardButton
+		for _, btn := range row {
+			if text, ok := btn["text"]; ok {
+				buttonRow = append(buttonRow, tgbotapi.NewKeyboardButton(text))
+			}
+		}
+		keyboard = append(keyboard, buttonRow)
+	}
+
+	return keyboard, nil
 }
