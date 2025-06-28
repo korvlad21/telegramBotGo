@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 )
 
 type WordStat struct {
@@ -12,7 +13,6 @@ type WordStat struct {
 	Los    uint64
 }
 
-// Геттеры
 func (e *WordStat) GetID() uint64 {
 	return e.ID
 }
@@ -29,7 +29,6 @@ func (e *WordStat) GetLos() uint64 {
 	return e.Los
 }
 
-// Сеттеры
 func (e *WordStat) SetID(id uint64) {
 	e.ID = id
 }
@@ -47,10 +46,8 @@ func (e *WordStat) SetLos(los uint64) {
 }
 
 func CreateStatTable(db *DB, chatId int64) error {
-	// Имя таблицы
 	tableName := fmt.Sprintf("%d_word_stat", chatId)
 
-	// SQL запрос для создания таблицы
 	query := fmt.Sprintf(`
 	CREATE TABLE IF NOT EXISTS %s (
 		id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -62,7 +59,6 @@ func CreateStatTable(db *DB, chatId int64) error {
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 `, tableName)
 
-	// Выполняем запрос
 	_, err := db.Connection.Exec(query)
 	if err != nil {
 		return fmt.Errorf("ошибка при создании таблицы %s: %v", tableName, err)
@@ -73,19 +69,15 @@ func CreateStatTable(db *DB, chatId int64) error {
 }
 
 func FillStatTableFromEngWords(db *DB, chatId int64) error {
-	// Получаем все английские слова
 	words, err := GetAllEngWord(db)
 	if err != nil {
 		return fmt.Errorf("не удалось получить слова: %v", err)
 	}
 
-	// Имя таблицы
 	tableName := fmt.Sprintf("%d_word_stat", chatId)
 
-	// Подготавливаем SQL-запрос
 	query := fmt.Sprintf(`INSERT INTO %s (word_id, win, los) VALUES (?, ?, ?)`, tableName)
 
-	// Вставляем каждое слово
 	for _, word := range words {
 		_, err := db.Connection.Exec(query, word.ID, word.Win, word.Los)
 		if err != nil {
@@ -148,4 +140,8 @@ func (ws *WordStat) Update(db *DB, chatId int64) error {
 	}
 
 	return nil
+}
+
+func (b *Bot) getRandomWord(words []EngWord) EngWord {
+	return words[rand.Intn(len(words))]
 }

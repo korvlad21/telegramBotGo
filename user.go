@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 type User struct {
 	id          string
@@ -18,7 +21,6 @@ type User struct {
 	totalRate   float64
 }
 
-// Геттеры
 func (e *User) GetID() string {
 	return e.id
 }
@@ -71,7 +73,6 @@ func (e *User) GetLevel() uint {
 	return e.level
 }
 
-// Сеттеры
 func (e *User) SetID(id string) {
 	e.id = id
 }
@@ -124,7 +125,6 @@ func (e *User) SetLevel(level uint) {
 	e.level = level
 }
 
-// Функция для получения списка клиентов
 func getUsers(db *DB) ([]User, error) {
 	query := `
 		SELECT id, username, 
@@ -201,4 +201,18 @@ func CreateUser(db *DB, chatId string, username string) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func (b *Bot) saveUserLastMessage(user *User, message string) error {
+	user.SetLastMessage(message)
+	return user.Update(b.db)
+}
+
+func (e *User) DebugSQL() string {
+	return fmt.Sprintf(
+		`UPDATE users SET username = '%s', cycle_true = %d, cycle_count = %d, total_true = %d, total_count = %d, 
+question = '%s', answer = '%s', buttons = '%s', last_message = '%s', sets = %d, level = %d WHERE id = '%s'`,
+		e.username, e.cycleTrue, e.cycleCount, e.totalTrue, e.totalCount,
+		e.question, e.answer, e.buttons, e.lastMessage, e.sets, e.level, e.id,
+	)
 }
