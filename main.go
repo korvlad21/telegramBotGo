@@ -136,7 +136,7 @@ func main() {
 					place++
 					if place <= 5 {
 						if strconv.FormatInt(update.Message.Chat.ID, 10) == usr.GetID() {
-							m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetUsername(), usr.GetTotalRate())
+							m += fmt.Sprintf("<b>%d. %s: %.2f%%</b>\n", place, usr.GetUsername(), float64(user.GetTotalTrue())/float64(user.GetTotalCount())*100)
 							topFive = true
 						} else {
 							m += fmt.Sprintf("%d. %s: %.2f%%\n", place, usr.GetUsername(), usr.GetTotalRate())
