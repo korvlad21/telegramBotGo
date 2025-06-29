@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type User struct {
@@ -203,8 +206,10 @@ func CreateUser(db *DB, chatId string, username string) (*User, error) {
 	return user, nil
 }
 
-func (b *Bot) saveUserLastMessage(user *User, message string) error {
+func (b *Bot) saveUserLastMessage(user *User, message string, buttons [][]tgbotapi.KeyboardButton) error {
 	user.SetLastMessage(message)
+	jsonButtons, _ := json.Marshal(buttons)
+	user.SetButtons(string(jsonButtons))
 	return user.Update(b.db)
 }
 

@@ -112,6 +112,11 @@ func EnsureStatTableReady(db *DB, chatId int64) error {
 			return fmt.Errorf("ошибка создания таблицы: %v", err)
 		}
 
+		err = CreateWordStatTrigger(db, chatId)
+		if err != nil {
+			return fmt.Errorf("ошибка создания триггера: %v", err)
+		}
+
 		err = FillStatTableFromEngWords(db, chatId)
 		if err != nil {
 			return fmt.Errorf("ошибка заполнения таблицы: %v", err)
@@ -144,4 +149,32 @@ func (ws *WordStat) Update(db *DB, chatId int64) error {
 
 func (b *Bot) getRandomWord(words []EngWord) EngWord {
 	return words[rand.Intn(len(words))]
+}
+
+func CreateWordStatTrigger(db *DB, chatId int64) error {
+	tableName := fmt.Sprintf("%d_word_stat", chatId)
+	triggerName := fmt.Sprintf("after_insert_eng_word_%d", chatId)
+
+	// На всякий случай удалим, если есть
+	dropTriggerQuery := fmt.Sprintf(`DROP TRIGGER IF EXISTS %s;`, triggerName)
+	_, _ = db.Connection.Exec(dropTriggerQuery)
+
+	// Создание триггера
+	triggerQuery := fmt.Sprintf(`
+CREATE TRIGGER %s
+AFTER INSERT ON eng_word
+FOR EACH ROW
+BEGIN
+  INSERT INTO %s (word_id, win, los)
+  VALUES (NEW.id, NEW.win, NEW.los);
+END;
+`, triggerName, tableName)
+
+	_, err := db.Connection.Exec(triggerQuery)
+	if err != nil {
+		return fmt.Errorf("ошибка при создании триггера %s: %v", triggerName, err)
+	}
+
+	log.Printf("Триггер %s успешно создан!", triggerName)
+	return nil
 }

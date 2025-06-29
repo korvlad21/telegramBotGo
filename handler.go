@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -35,6 +34,10 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
+	if user == nil {
+		return
+	}
+
 	if message.Text == "/repeat" {
 		b.handleRepeatCommand(user, message.Chat.ID)
 		return
@@ -47,7 +50,11 @@ func (b *Bot) getOrCreateUser(message *tgbotapi.Message) (*User, error) {
 	user, err := getUserByID(b.db, message.Chat.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return b.createNewUser(message)
+			_, createErr := b.createNewUser(message)
+			if createErr != nil {
+				return nil, createErr
+			}
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -73,7 +80,7 @@ func (b *Bot) createNewUser(message *tgbotapi.Message) (*User, error) {
 	}
 
 	fullMessage := welcomeMsg + questionMsg
-	if err := b.saveUserLastMessage(user, fullMessage); err != nil {
+	if err := b.saveUserLastMessage(user, fullMessage, buttons); err != nil {
 		log.Printf("⚠️ Ошибка при сохранении сообщения: %v", err)
 	}
 
@@ -145,12 +152,14 @@ func (b *Bot) processAnswerAndSendResponse(user *User, message *tgbotapi.Message
 
 	fullResponse := response + nextQuestion
 	log.Printf("⚠️ %v", fullResponse)
-	if err := b.saveUserLastMessage(user, fullResponse); err != nil {
-		log.Printf("⚠️ Ошибка сохранения сообщения: %v", err)
+	if err := b.saveUserLastMessage(user, fullResponse, buttons); err != nil {
+		log.Printf("⚠️ Ошибка при сохранении сообщения: %v", err)
 	}
 
-	jsonButtons, _ := json.Marshal(buttons)
-	user.SetButtons(string(jsonButtons))
+	// Обновляем пользователя один раз
+	if err := user.Update(b.db); err != nil {
+		log.Printf("⚠️ Ошибка при сохранении данных пользователя: %v", err)
+	}
 
 	b.sendMessageWithKeyboard(message.Chat.ID, fullResponse, buttons)
 }
